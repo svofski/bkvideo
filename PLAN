@@ -2,51 +2,18 @@ Goal: capture BK screen for sending it to the host PC over UART
 
 BK pixel clock = 12 MHz
 
-Fields are 312 lines, 15625 Hz approx, 50 fields/sec
+Fields are 318 lines, 15625 Hz approx, 50 fields/sec
 
 In B&W mode, 512x256
 In RGB mode, 256x256
 
 RGB can be calculated from B&W bits if they're captured properly.
 
-Method A:
-An unrolled loop shifts bits into SRAM
-Master clock has to be 72MHz (12x6)
-6 clock cycles per pixel
-Dumb, no time to waste. Unreliable because of Flash waitstates, cache etc.
-
-Method B:
 SPI hardware shifts in the bits
 DMA stores them in SRAM
 Master clock has to be 72Mhz (12x6)
-Less dumb, 2x or 3x oversampling can be implemented for better decoding.
-CPU is mostly free
-Not sure how to configure SPI for continuous streaming
 
 For 3x oversampled input: 1 line = 512*3/8 = 192 bytes, times 256 lines = 49152 bytes 
 
-Impossibly best case scenario: 1 frame = 16384 bytes
-
-With 3 samples per pixel it should be possible to detect drifts in processing software
-
-At 1Mbps, a theoretical speed of 2 fps can be attainable with 3x, 5 fps at 1x
-
-With transfer speeds so slow, maybe some data processing is better done in the micro, e.g:
-4-bit rle bitstream inverted: best case 16 pixels in 4 bits, worst case 16 pixels in 64 bits...
-8-bit repetition count: could be better for checker patterns, green and blue fills
-<+count> <n> <n> <n>... non repetitive octets
-<-count> <r>            repetitive
-
-
-
-Method C:
-Input Capture registers all pixel level transitions
-The events are stored in SRAM by DMA controller
-Master clock can be 80MHz (or more?): events will need later processing anyway
-No slips possible, all transitions will be recorded, but their times may slip too
-Worst-case scenario: checker pattern (solid green or blue) will have 512 events per line
-512 events = 1024 bytes to store
-Every line would have to be processed immediately after capture, 
-this is not possible for every line, there's no time, but lines can be interlaced.
-
+1 frame = 16384 bytes
 
